@@ -1,0 +1,18 @@
+name: 'UHC Versioning'
+description: 'automatically create versioned releases'
+inputs:
+    version_type:
+        description: 'Either "major", "minor", or "patch"'
+        required: true
+
+    upload_file:
+        description: 'Path to jar file to upload to release'
+        required: true
+
+    base_version:
+        description: 'The version to start from'
+        required: true
+
+runs:
+    using: 'node16'
+    main: 'index.js'
