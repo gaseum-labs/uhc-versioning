@@ -9620,18 +9620,44 @@ function wrappy (fn, cb) {
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core_1 = __importDefault(__nccwpck_require__(2186));
+const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
-const fs_1 = __importDefault(__nccwpck_require__(7147));
-const path_1 = __importDefault(__nccwpck_require__(1017));
+const fs = __importStar(__nccwpck_require__(7147));
+const path = __importStar(__nccwpck_require__(1017));
 class Version {
-    major;
-    minor;
-    patch;
     constructor(major, minor, patch) {
         this.major = major;
         this.minor = minor;
@@ -9668,13 +9694,14 @@ class Version {
         return this.patch > other.patch;
     }
 }
-const getLatestRelease = async (octokit, baseVersion) => {
-    const responseRelease = (await octokit.rest.repos
+const getLatestRelease = (octokit, baseVersion) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const responseRelease = (_a = (yield octokit.rest.repos
         .getLatestRelease({
         owner: github_1.context.repo.owner,
         repo: github_1.context.repo.repo,
     })
-        .catch(() => undefined))?.data;
+        .catch(() => undefined))) === null || _a === void 0 ? void 0 : _a.data;
     if (responseRelease === undefined) {
         console.log(`No existing release found, using base version ${baseVersion}`);
         return { version: baseVersion, release: undefined };
@@ -9685,28 +9712,28 @@ const getLatestRelease = async (octokit, baseVersion) => {
         return { version: baseVersion, release: undefined };
     }
     return { release: responseRelease, version: parsedVersion };
-};
+});
 const isVersionType = (input) => {
     return input === 'major' || input === 'minor' || input === 'patch';
 };
-const run = async () => {
-    const versionType = core_1.default.getInput('version_type');
+const run = () => __awaiter(void 0, void 0, void 0, function* () {
+    const versionType = core.getInput('version_type');
     if (!isVersionType(versionType))
         throw Error(`Expected version_type to be one of "major", "minor", "patch", got "${versionType}" instead`);
-    const uploadFile = core_1.default.getInput('upload_file');
-    if (!fs_1.default.existsSync(uploadFile))
+    const uploadFile = core.getInput('upload_file');
+    if (!fs.existsSync(uploadFile))
         throw Error(`Upload file "${uploadFile}" does not exist`);
-    const baseVersion = Version.parse(core_1.default.getInput('base_version'));
+    const baseVersion = Version.parse(core.getInput('base_version'));
     if (baseVersion === undefined)
         throw Error(`base_version is not a valid version, got \"${baseVersion}\"`);
     const token = process.env.GITHUB_TOKEN;
     if (token === undefined)
         throw Error('No GITHUB_TOKEN environment variable found');
     const octokit = (0, github_1.getOctokit)(token);
-    const { version: lastVersion, release: lastRelease } = await getLatestRelease(octokit, baseVersion);
+    const { version: lastVersion, release: lastRelease } = yield getLatestRelease(octokit, baseVersion);
     const newVersion = lastVersion.bump(versionType);
     console.log(`Last version: ${lastVersion}, New version: ${newVersion}`);
-    if (github_1.context.sha === lastRelease?.target_commitish) {
+    if (github_1.context.sha === (lastRelease === null || lastRelease === void 0 ? void 0 : lastRelease.target_commitish)) {
         /* overwrite release version */
         octokit.rest.repos.updateRelease({
             owner: github_1.context.repo.owner,
@@ -9717,25 +9744,25 @@ const run = async () => {
         });
     }
     else {
-        const newRelease = (await octokit.rest.repos.createRelease({
+        const newRelease = (yield octokit.rest.repos.createRelease({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
             tag_name: newVersion.toString(),
             name: newVersion.toString(),
             target_commitish: github_1.context.sha,
         })).data;
-        await octokit.rest.repos.uploadReleaseAsset({
+        yield octokit.rest.repos.uploadReleaseAsset({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
             release_id: newRelease.id,
-            name: path_1.default.basename(uploadFile),
-            data: fs_1.default.readFileSync(uploadFile).toString(),
+            name: path.basename(uploadFile),
+            data: fs.readFileSync(uploadFile).toString(),
         });
     }
-};
+});
 run().catch(error => error instanceof Error
-    ? core_1.default.setFailed(error)
-    : core_1.default.setFailed(error?.toString()));
+    ? core.setFailed(error)
+    : core.setFailed(error === null || error === void 0 ? void 0 : error.toString()));
 
 
 /***/ }),

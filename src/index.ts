@@ -1,8 +1,8 @@
-import core from '@actions/core';
+import * as core from '@actions/core';
 import { context, getOctokit } from '@actions/github';
-import fs from 'fs';
+import * as fs from 'fs';
 import { GitHub } from '@actions/github/lib/utils';
-import path from 'path';
+import * as path from 'path';
 
 type OctoKit = InstanceType<typeof GitHub>;
 
