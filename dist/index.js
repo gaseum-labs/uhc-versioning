@@ -9653,6 +9653,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Version = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github_1 = __nccwpck_require__(5438);
 const fs = __importStar(__nccwpck_require__(7147));
@@ -9669,7 +9670,7 @@ class Version {
         const [major, minor, patch] = input
             .substring(1)
             .split('.')
-            .map(Number.parseInt);
+            .map(str => Number.parseInt(str));
         return new Version(major, minor, patch);
     }
     toString() {
@@ -9694,6 +9695,7 @@ class Version {
         return this.patch > other.patch;
     }
 }
+exports.Version = Version;
 const getLatestRelease = (octokit, baseVersion) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const responseRelease = (_a = (yield octokit.rest.repos

@@ -8,7 +8,7 @@ type OctoKit = InstanceType<typeof GitHub>;
 
 type VersionType = 'major' | 'minor' | 'patch';
 
-class Version {
+export class Version {
 	major: number;
 	minor: number;
 	patch: number;
@@ -25,7 +25,7 @@ class Version {
 		const [major, minor, patch] = input
 			.substring(1)
 			.split('.')
-			.map(Number.parseInt);
+			.map(str => Number.parseInt(str));
 
 		return new Version(major, minor, patch);
 	}
