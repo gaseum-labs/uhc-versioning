@@ -9696,7 +9696,7 @@ class Version {
     }
 }
 exports.Version = Version;
-const getLatestRelease = (octokit, baseVersion) => __awaiter(void 0, void 0, void 0, function* () {
+const getLatestRelease = (octokit) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const responseRelease = (_a = (yield octokit.rest.repos
         .getLatestRelease({
@@ -9705,13 +9705,13 @@ const getLatestRelease = (octokit, baseVersion) => __awaiter(void 0, void 0, voi
     })
         .catch(() => undefined))) === null || _a === void 0 ? void 0 : _a.data;
     if (responseRelease === undefined) {
-        console.log(`No existing release found, using base version ${baseVersion}`);
-        return { version: baseVersion, release: undefined };
+        console.log(`No existing release found`);
+        return undefined;
     }
     const parsedVersion = Version.parse(responseRelease.tag_name);
     if (parsedVersion === undefined) {
-        console.warn(`Latest release has INVALID version: "${responseRelease.tag_name}", reverting to base version ${baseVersion}`);
-        return { version: baseVersion, release: undefined };
+        console.warn(`Latest release has INVALID version: "${responseRelease.tag_name}"`);
+        return undefined;
     }
     return { release: responseRelease, version: parsedVersion };
 });
@@ -9719,6 +9719,7 @@ const isVersionType = (input) => {
     return input === 'major' || input === 'minor' || input === 'patch';
 };
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _b;
     const versionType = core.getInput('version_type');
     if (!isVersionType(versionType))
         throw Error(`Expected version_type to be one of "major", "minor", "patch", got "${versionType}" instead`);
@@ -9732,15 +9733,15 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     if (token === undefined)
         throw Error('No GITHUB_TOKEN environment variable found');
     const octokit = (0, github_1.getOctokit)(token);
-    const { version: lastVersion, release: lastRelease } = yield getLatestRelease(octokit, baseVersion);
-    const newVersion = lastVersion.bump(versionType);
-    console.log(`Last version: ${lastVersion}, New version: ${newVersion}`);
-    if (github_1.context.sha === (lastRelease === null || lastRelease === void 0 ? void 0 : lastRelease.target_commitish)) {
+    const last = yield getLatestRelease(octokit);
+    const newVersion = last === undefined ? baseVersion : last.version.bump(versionType);
+    console.log(`Last version: ${last === null || last === void 0 ? void 0 : last.version}, New version: ${newVersion}`);
+    if (github_1.context.sha === ((_b = last === null || last === void 0 ? void 0 : last.release) === null || _b === void 0 ? void 0 : _b.target_commitish)) {
         /* overwrite release version */
         octokit.rest.repos.updateRelease({
             owner: github_1.context.repo.owner,
             repo: github_1.context.repo.repo,
-            release_id: lastRelease.id,
+            release_id: last.release.id,
             tag_name: newVersion.toString(),
             name: newVersion.toString(),
         });
