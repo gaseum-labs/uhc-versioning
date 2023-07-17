@@ -61,8 +61,7 @@ type GithubRelease = Awaited<
 
 const getLatestRelease = async (
 	octokit: OctoKit,
-	baseVersion: Version,
-): Promise<{ release: GithubRelease | undefined; version: Version }> => {
+): Promise<{ release: GithubRelease; version: Version } | undefined> => {
 	const responseRelease = (
 		await octokit.rest.repos
 			.getLatestRelease({
@@ -72,18 +71,16 @@ const getLatestRelease = async (
 			.catch(() => undefined)
 	)?.data;
 	if (responseRelease === undefined) {
-		console.log(
-			`No existing release found, using base version ${baseVersion}`,
-		);
-		return { version: baseVersion, release: undefined };
+		console.log(`No existing release found`);
+		return undefined;
 	}
 
 	const parsedVersion = Version.parse(responseRelease.tag_name);
 	if (parsedVersion === undefined) {
 		console.warn(
-			`Latest release has INVALID version: "${responseRelease.tag_name}", reverting to base version ${baseVersion}`,
+			`Latest release has INVALID version: "${responseRelease.tag_name}"`,
 		);
-		return { version: baseVersion, release: undefined };
+		return undefined;
 	}
 
 	return { release: responseRelease, version: parsedVersion };
@@ -116,19 +113,19 @@ const run = async () => {
 
 	const octokit = getOctokit(token);
 
-	const { version: lastVersion, release: lastRelease } =
-		await getLatestRelease(octokit, baseVersion);
+	const last = await getLatestRelease(octokit);
 
-	const newVersion = lastVersion.bump(versionType);
+	const newVersion =
+		last === undefined ? baseVersion : last.version.bump(versionType);
 
-	console.log(`Last version: ${lastVersion}, New version: ${newVersion}`);
+	console.log(`Last version: ${last?.version}, New version: ${newVersion}`);
 
-	if (context.sha === lastRelease?.target_commitish) {
+	if (context.sha === last?.release?.target_commitish) {
 		/* overwrite release version */
 		octokit.rest.repos.updateRelease({
 			owner: context.repo.owner,
 			repo: context.repo.repo,
-			release_id: lastRelease.id,
+			release_id: last.release.id,
 			tag_name: newVersion.toString(),
 			name: newVersion.toString(),
 		});
